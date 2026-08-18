@@ -96,8 +96,32 @@ def diffusion_training_loss(model, x0, t, noise, alphas_cumprod):
     # Compute the simplified DDPM noise-prediction loss
     return noise_prediction_loss(noise_pred, noise)
 
-# Step 9 - timestep_embedding (not yet solved)
-# TODO: implement
+# Step 9 - timestep_embedding
+def timestep_embedding(t, dim: int):
+    # Compute half of the embedding dimension for sin/cos pairs
+    half = dim // 2
+
+    # Handle the half == 1 case by using exponent 0
+    if half == 1:
+        exponent = torch.zeros(1, device=t.device, dtype=torch.float32)
+    else:
+        exponent = torch.arange(
+            half,
+            device=t.device,
+            dtype=torch.float32
+        ) / (half - 1)
+
+    # Compute the frequencies
+    frequencies = 10000.0 ** exponent
+
+    # Scale each timestep by the corresponding frequency
+    angles = t.float().unsqueeze(1) / frequencies.unsqueeze(0)
+
+    # Concatenate sine and cosine components
+    return torch.cat([
+        torch.sin(angles),
+        torch.cos(angles)
+    ], dim=1)
 
 # Step 10 - init_tiny_unet (not yet solved)
 # TODO: implement
