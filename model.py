@@ -85,8 +85,16 @@ def noise_prediction_loss(noise_pred, noise):
     # Mean squared error between predicted and true noise
     return torch.mean((noise - noise_pred) ** 2)
 
-# Step 8 - diffusion_training_loss (not yet solved)
-# TODO: implement
+# Step 8 - diffusion_training_loss
+def diffusion_training_loss(model, x0, t, noise, alphas_cumprod):
+    # Sample the noisy image x_t using the closed-form forward process
+    x_t = q_sample(x0, t, noise, alphas_cumprod)
+
+    # Predict the noise added to x0
+    noise_pred = model(x_t, t)
+
+    # Compute the simplified DDPM noise-prediction loss
+    return noise_prediction_loss(noise_pred, noise)
 
 # Step 9 - timestep_embedding (not yet solved)
 # TODO: implement
