@@ -123,8 +123,40 @@ def timestep_embedding(t, dim: int):
         torch.cos(angles)
     ], dim=1)
 
-# Step 10 - init_tiny_unet (not yet solved)
-# TODO: implement
+# Step 10 - init_tiny_unet
+def init_tiny_unet(
+    in_ch: int = 1,
+    hidden: int = 16,
+    time_dim: int = 16,
+    seed: int = 0
+) -> dict:
+    # Set the random seed for reproducible initialization
+    torch.manual_seed(seed)
+
+    # Helper to initialize weights from N(0, 0.02^2)
+    def init_weight(*shape):
+        return torch.randn(*shape, dtype=torch.float32) * 0.02
+
+    # Initialize parameters
+    params = {
+        "conv_in_w": init_weight(hidden, in_ch, 3, 3),
+        "conv_in_b": torch.zeros(hidden, dtype=torch.float32),
+
+        "time_mlp_w": init_weight(hidden, time_dim),
+        "time_mlp_b": torch.zeros(hidden, dtype=torch.float32),
+
+        "conv_mid_w": init_weight(hidden, hidden, 3, 3),
+        "conv_mid_b": torch.zeros(hidden, dtype=torch.float32),
+
+        "conv_out_w": init_weight(in_ch, hidden, 3, 3),
+        "conv_out_b": torch.zeros(in_ch, dtype=torch.float32),
+    }
+
+    # Make all parameters trainable
+    for name in params:
+        params[name].requires_grad_(True)
+
+    return params
 
 # Step 11 - tiny_unet_forward (not yet solved)
 # TODO: implement
