@@ -454,8 +454,20 @@ def ddpm_sample_loop(params: dict, schedule: dict, shape: tuple, seed: int = 0):
 
     return x
 
-# Step 19 - sample_quality_mse (not yet solved)
-# TODO: implement
+# Step 19 - sample_quality_mse
+def sample_quality_mse(samples, dataset) -> float:
+    # Flatten each image into a vector
+    samples_flat = samples.reshape(samples.shape[0], -1)
+    dataset_flat = dataset.reshape(dataset.shape[0], -1)
+
+    # Compute pairwise MSE between every sample and every dataset image
+    mse = ((samples_flat[:, None, :] - dataset_flat[None, :, :]) ** 2).mean(dim=2)
+
+    # Find the nearest dataset image for each generated sample
+    min_mse = mse.min(dim=1).values
+
+    # Return the mean nearest-neighbor MSE as a Python float
+    return float(min_mse.mean())
 
 # Step 20 - ddpm_experiment (not yet solved)
 # TODO: implement
