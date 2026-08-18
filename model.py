@@ -35,8 +35,17 @@ def extract_into_batch(a, t, x):
     # and reshape for broadcasting with x
     return a[t].reshape(t.shape[0], 1, 1, 1)
 
-# Step 5 - q_sample (not yet solved)
-# TODO: implement
+# Step 5 - q_sample
+def q_sample(x0, t, noise, alphas_cumprod):
+    # Get cumulative alpha values for each timestep
+    alpha_bar_t = alphas_cumprod[t].reshape(t.shape[0], 1, 1, 1)
+
+    # Closed-form forward diffusion:
+    # x_t = sqrt(alpha_bar_t) * x0 + sqrt(1 - alpha_bar_t) * noise
+    return (
+        torch.sqrt(alpha_bar_t) * x0
+        + torch.sqrt(1.0 - alpha_bar_t) * noise
+    )
 
 # Step 6 - build_diffusion_schedule (not yet solved)
 # TODO: implement
