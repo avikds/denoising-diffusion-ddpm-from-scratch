@@ -337,8 +337,69 @@ def predict_x0_from_eps(x_t, t, eps, alphas_cumprod):
         x_t - torch.sqrt(1.0 - alpha_bar_t) * eps
     ) / torch.sqrt(alpha_bar_t)
 
-# Step 16 - ddpm_p_mean_variance (not yet solved)
-# TODO: implement
+# Step 16 - ddpm_p_mean_variance
+def ddpm_p_mean_variance(x_t, t, eps, schedule: dict):
+    # Recover and clamp the predicted clean image
+    x0_hat = predict_x0_from_eps(
+        x_t,
+        t,
+        eps,
+        schedule["alphas_cumprod"]
+    )
+    x0_hat = x0_hat.clamp(-1.0, 1.0)
+
+    # Extract schedule values for the current timestep
+    alphas_t = extract_into_batch(
+        schedule["alphas"],
+        t,
+        x_t
+    )
+    betas_t = extract_into_batch(
+        schedule["betas"],
+        t,
+        x_t
+    )
+    alpha_bar_t = extract_into_batch(
+        schedule["alphas_cumprod"],
+        t,
+        x_t
+    )
+
+    # alpha_bar_{t-1}, with alpha_bar_{-1} := 1 for t == 0
+    alpha_bar_prev = torch.ones_like(alpha_bar_t)
+
+    mask = (t > 0).float().reshape(-1, 1, 1, 1)
+    t_prev = torch.clamp(t - 1, min=0)
+
+    alpha_bar_prev_values = schedule["alphas_cumprod"][t_prev]
+    alpha_bar_prev = (
+        mask * alpha_bar_prev_values.reshape(-1, 1, 1, 1)
+        + (1.0 - mask)
+    )
+
+    # DDPM posterior mean:
+    # mu = [sqrt(alpha_bar_{t-1}) * beta_t / (1-alpha_bar_t)] * x0_hat
+    #    + [sqrt(alpha_t) * (1-alpha_bar_{t-1}) / (1-alpha_bar_t)] * x_t
+    denom = 1.0 - alpha_bar_t
+
+    coef_x0 = (
+        torch.sqrt(alpha_bar_prev)
+        * betas_t
+        / denom
+    )
+
+    coef_xt = (
+        torch.sqrt(alphas_t)
+        * (1.0 - alpha_bar_prev)
+        / denom
+    )
+
+    mean = coef_x0 * x0_hat + coef_xt * x_t
+
+    # Simple fixed-variance DDPM choice
+    variance = betas_t
+
+    return mean, variance, x0_hat
 
 # Step 17 - ddpm_p_sample (not yet solved)
 # TODO: implement
