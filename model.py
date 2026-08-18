@@ -205,8 +205,34 @@ def tiny_unet_forward(x, t, params: dict):
         padding=1
     )
 
-# Step 12 - make_blob_dataset (not yet solved)
-# TODO: implement
+# Step 12 - make_blob_dataset
+def make_blob_dataset(n: int = 128, size: int = 8, seed: int = 0):
+    # Set seed for reproducibility
+    torch.manual_seed(seed)
+
+    radius = size // 4
+
+    # Create an empty dataset
+    x = torch.zeros(n, 1, size, size, dtype=torch.float32)
+
+    # Coordinate grids
+    yy, xx = torch.meshgrid(
+        torch.arange(size),
+        torch.arange(size),
+        indexing="ij"
+    )
+
+    # Place one filled disk in each image
+    for i in range(n):
+        center = torch.randint(radius, size - radius, (2,))
+        cy, cx = center[0], center[1]
+
+        # Filled disk mask
+        mask = (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2
+
+        x[i, 0][mask] = 1.0
+
+    return x
 
 # Step 13 - ddpm_train_step (not yet solved)
 # TODO: implement
