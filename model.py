@@ -29,8 +29,11 @@ def cumprod_alphas(alphas):
     # Compute cumulative product of alphas
     return torch.cumprod(alphas, dim=0)
 
-# Step 4 - extract_into_batch (not yet solved)
-# TODO: implement
+# Step 4 - extract_into_batch
+def extract_into_batch(a, t, x):
+    # Gather schedule values at the given timesteps
+    # and reshape for broadcasting with x
+    return a[t].reshape(t.shape[0], 1, 1, 1)
 
 # Step 5 - q_sample (not yet solved)
 # TODO: implement
