@@ -158,8 +158,52 @@ def init_tiny_unet(
 
     return params
 
-# Step 11 - tiny_unet_forward (not yet solved)
-# TODO: implement
+# Step 11 - tiny_unet_forward
+def tiny_unet_forward(x, t, params: dict):
+    # Input convolution
+    h = F.conv2d(
+        x,
+        params["conv_in_w"],
+        params["conv_in_b"],
+        padding=1
+    )
+
+    # Sinusoidal timestep embedding
+    temb = timestep_embedding(
+        t,
+        params["time_mlp_w"].shape[1]
+    )
+
+    # Time embedding MLP
+    temb = F.linear(
+        temb,
+        params["time_mlp_w"],
+        params["time_mlp_b"]
+    )
+    temb = F.relu(temb)
+
+    # Add time conditioning to the convolutional features
+    h = h + temb[:, :, None, None]
+
+    # Residual denoising layers
+    h = F.relu(h)
+
+    h = F.relu(
+        F.conv2d(
+            h,
+            params["conv_mid_w"],
+            params["conv_mid_b"],
+            padding=1
+        )
+    )
+
+    # Predict the noise
+    return F.conv2d(
+        h,
+        params["conv_out_w"],
+        params["conv_out_b"],
+        padding=1
+    )
 
 # Step 12 - make_blob_dataset (not yet solved)
 # TODO: implement
