@@ -401,8 +401,29 @@ def ddpm_p_mean_variance(x_t, t, eps, schedule: dict):
 
     return mean, variance, x0_hat
 
-# Step 17 - ddpm_p_sample (not yet solved)
-# TODO: implement
+# Step 17 - ddpm_p_sample
+def ddpm_p_sample(x_t, t, params: dict, schedule: dict, noise=None):
+    # Predict the noise at the current timestep
+    eps = tiny_unet_forward(x_t, t, params)
+
+    # Compute the reverse-process Gaussian parameters
+    mean, var, _ = ddpm_p_mean_variance(
+        x_t,
+        t,
+        eps,
+        schedule
+    )
+
+    # Sample Gaussian noise if none was provided
+    if noise is None:
+        noise = torch.randn_like(x_t)
+
+    # No noise is added at t == 0 because the final step is deterministic
+    nonzero_mask = (t != 0).float().reshape(-1, 1, 1, 1)
+
+    x_prev = mean + torch.sqrt(var) * noise * nonzero_mask
+
+    return x_prev
 
 # Step 18 - ddpm_sample_loop (not yet solved)
 # TODO: implement
