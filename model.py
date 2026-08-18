@@ -234,8 +234,55 @@ def make_blob_dataset(n: int = 128, size: int = 8, seed: int = 0):
 
     return x
 
-# Step 13 - ddpm_train_step (not yet solved)
-# TODO: implement
+# Step 13 - ddpm_train_step
+def ddpm_train_step(
+    params: dict,
+    x0,
+    schedule: dict,
+    lr: float = 1e-2,
+    seed: int = 0
+) -> tuple[dict, float]:
+    # Seed RNG for reproducible timestep and noise sampling
+    torch.manual_seed(seed)
+
+    B = x0.shape[0]
+    T = schedule["T"]
+
+    # Sample random timesteps t ~ Uniform{0, ..., T-1}
+    t = torch.randint(
+        0,
+        T,
+        (B,),
+        device=x0.device
+    )
+
+    # Sample Gaussian noise with the same shape as x0
+    noise = torch.randn_like(x0)
+
+    # Compute the DDPM noise-prediction loss
+    loss = diffusion_training_loss(
+        lambda x, t: tiny_unet_forward(x, t, params),
+        x0,
+        t,
+        noise,
+        schedule["alphas_cumprod"]
+    )
+
+    # Backpropagate
+    loss.backward()
+
+    # Perform one SGD update and detach the updated parameters
+    new_params = {}
+
+    for name, p in params.items():
+        if p.grad is not None:
+            p_new = (p - lr * p.grad).detach().requires_grad_(True)
+        else:
+            p_new = p.clone()
+
+        new_params[name] = p_new
+
+    return new_params, float(loss)
 
 # Step 14 - train_ddpm (not yet solved)
 # TODO: implement
