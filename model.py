@@ -326,8 +326,16 @@ def train_ddpm(
 
     return params, history
 
-# Step 15 - predict_x0_from_eps (not yet solved)
-# TODO: implement
+# Step 15 - predict_x0_from_eps
+def predict_x0_from_eps(x_t, t, eps, alphas_cumprod):
+    # Extract alpha_bar_t for each sample in the batch
+    alpha_bar_t = extract_into_batch(alphas_cumprod, t, x_t)
+
+    # Recover the clean image estimate:
+    # x0_hat = (x_t - sqrt(1 - alpha_bar_t) * eps) / sqrt(alpha_bar_t)
+    return (
+        x_t - torch.sqrt(1.0 - alpha_bar_t) * eps
+    ) / torch.sqrt(alpha_bar_t)
 
 # Step 16 - ddpm_p_mean_variance (not yet solved)
 # TODO: implement
