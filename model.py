@@ -425,8 +425,34 @@ def ddpm_p_sample(x_t, t, params: dict, schedule: dict, noise=None):
 
     return x_prev
 
-# Step 18 - ddpm_sample_loop (not yet solved)
-# TODO: implement
+# Step 18 - ddpm_sample_loop
+def ddpm_sample_loop(params: dict, schedule: dict, shape: tuple, seed: int = 0):
+    # Seed RNG for reproducible sampling
+    torch.manual_seed(seed)
+
+    # Start from pure Gaussian noise
+    x = torch.randn(shape)
+
+    T = schedule["T"]
+    B = shape[0]
+
+    # Run the reverse diffusion process from T-1 down to 0
+    for t in range(T - 1, -1, -1):
+        t_batch = torch.full(
+            (B,),
+            t,
+            dtype=torch.long,
+            device=x.device
+        )
+
+        x = ddpm_p_sample(
+            x,
+            t_batch,
+            params,
+            schedule
+        )
+
+    return x
 
 # Step 19 - sample_quality_mse (not yet solved)
 # TODO: implement
