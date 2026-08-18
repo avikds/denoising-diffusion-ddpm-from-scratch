@@ -469,6 +469,71 @@ def sample_quality_mse(samples, dataset) -> float:
     # Return the mean nearest-neighbor MSE as a Python float
     return float(min_mse.mean())
 
-# Step 20 - ddpm_experiment (not yet solved)
-# TODO: implement
+# Step 20 - ddpm_experiment
+def ddpm_experiment(
+    n_data: int = 64,
+    size: int = 8,
+    T: int = 20,
+    hidden: int = 16,
+    num_steps: int = 40,
+    batch_size: int = 16,
+    lr: float = 5e-2,
+    n_samples: int = 8,
+    seed: int = 0
+) -> dict:
+    # 1. Create the synthetic blob dataset
+    dataset = make_blob_dataset(
+        n=n_data,
+        size=size,
+        seed=seed
+    )
+
+    # 2. Build the DDPM diffusion schedule
+    schedule = build_diffusion_schedule(T=T)
+
+    # 3. Initialize the tiny time-conditioned denoiser
+    params = init_tiny_unet(
+        in_ch=1,
+        hidden=hidden,
+        time_dim=hidden,
+        seed=seed
+    )
+
+    # 4. Train the DDPM
+    params, history = train_ddpm(
+        dataset,
+        params,
+        schedule,
+        num_steps=num_steps,
+        batch_size=batch_size,
+        lr=lr,
+        seed=seed
+    )
+
+    # 5. Generate samples using the trained DDPM
+    samples = ddpm_sample_loop(
+        params,
+        schedule,
+        (n_samples, 1, size, size),
+        seed=seed + 1
+    )
+
+    # 6. Generate a pure-noise baseline with the same shape
+    torch.manual_seed(seed + 2)
+    noise_samples = torch.randn(
+        (n_samples, 1, size, size)
+    )
+
+    # 7. Evaluate generated samples and baseline
+    sample_mse = sample_quality_mse(samples, dataset)
+    noise_mse = sample_quality_mse(noise_samples, dataset)
+    improvement = noise_mse - sample_mse
+
+    return {
+        "train_losses": history,
+        "final_loss": float(history[-1]),
+        "sample_mse": float(sample_mse),
+        "noise_mse": float(noise_mse),
+        "improvement": float(improvement),
+    }
 
